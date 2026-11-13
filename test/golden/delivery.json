@@ -1,0 +1,10 @@
+{
+  "secret": "whsec_golden_delivery",
+  "headers": {
+    "X-Costfluent-Signature": "sha256=93eda25afc41210e394f67ed25f8815d42a39da3fd37d50beec984f8a67b59d8",
+    "X-Costfluent-Event": "savings_item_status",
+    "X-Costfluent-Delivery": "delivery-0192a3b4c5d67e8f9a0b1c2d3e4f5a6b",
+    "Content-Type": "application/json; charset=utf-8"
+  },
+  "body": "{\"event_type\":\"savings_item_status\",\"schema_version\":1,\"subject\":\"Savings opportunity accepted: Rightsize db-prod-1\",\"content\":\"Rightsize db-prod-1 was accepted. It\\u0027s worth EUR 412.50 a month \\u0026 starts today.\",\"html_content\":\"\\u003Cp\\u003ERightsize db-prod-1 was accepted. It\\u0027s worth EUR 412.50 a month \\u0026 starts today.\\u003C/p\\u003E\",\"timestamp\":\"2026-10-19T08:30:00.0000000Z\",\"app_id\":\"app_KlsefE89a0qcjQ4fKjtMXQ\",\"data\":{\"opportunity_id\":\"sav_PSwbCgAAAECAAAAAAAAAAQ\",\"workspace_id\":\"wsp_HjovbVxLbk2PcBEiM0RVZg\",\"title\":\"Rightsize db-prod-1\",\"status\":\"accepted\",\"previous_status\":\"open\",\"estimated_monthly_saving\":412.50,\"currency\":\"EUR\",\"changed_at\":\"2026-10-19T08:29:58Z\"}}"
+}

@@ -1,0 +1,91 @@
+name: publish
+# Runs on a vX.Y.Z tag: lints, builds, tests and packs the package, then publishes the packed tarball
+# to npm with a provenance statement, which n8n requires of every community node since 2026-05-01.
+#
+# npm authenticates the publish job by trusted publishing (OIDC): on npmjs.com the package's trusted
+# publisher names this repository and publish.yml, and no token is stored here. An NPM_TOKEN
+# repository secret, when set, is used instead; leave it unset otherwise. Only the publish job holds
+# the OIDC token; the build job, which installs packages and runs code, never does.
+on:
+  push:
+    tags: ['v*.*.*']
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+permissions:
+  contents: read
+jobs:
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      # No dependency cache: a tag run would restore what another ref wrote into a release.
+      - name: Setup node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      # npm publishes whatever version package.json names, so a tag that disagrees would publish a
+      # version nobody tagged.
+      - name: Check version
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          version="$(node -p "require('./package.json').version")"
+          if [ "v$version" != "$TAG" ]; then
+            echo "::error::package.json has version $version, but the tag is $TAG"
+            exit 1
+          fi
+      - name: Install dependencies
+        run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Build
+        run: npm run build
+      # The last chance to stop a broken trigger before it reaches anyone's workflow.
+      - name: Test
+        run: npm test
+      - name: Pack
+        run: npm pack
+      - name: Upload package
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: package
+          path: n8n-nodes-costfluent-*.tgz
+          if-no-files-found: error
+
+  publish:
+    name: publish
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      # The OIDC token npm exchanges for a publish credential and signs the provenance with.
+      id-token: write
+    steps:
+      - name: Setup node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Download package
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: package
+      # A token, even an empty one, would replace trusted publishing, so it is set only when present.
+      # A tarball publishes without the package's prepublishOnly script, which only refuses a publish
+      # that `n8n-node release` did not start.
+      - name: Publish
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -n "$NPM_TOKEN" ]; then
+            npm config set //registry.npmjs.org/:_authToken "$NPM_TOKEN"
+          fi
+          npm publish n8n-nodes-costfluent-*.tgz --provenance --access public
