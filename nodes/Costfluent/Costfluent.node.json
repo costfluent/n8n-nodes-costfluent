@@ -1,5 +1,5 @@
 {
-	"node": "n8n-nodes-costfluent.costfluent",
+	"node": "@costfluent/n8n-nodes-costfluent.costfluent",
 	"nodeVersion": "1.0",
 	"codexVersion": "1.0",
 	"categories": ["Analytics", "Finance & Accounting"],

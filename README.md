@@ -1,4 +1,4 @@
-# n8n-nodes-costfluent
+# @costfluent/n8n-nodes-costfluent
 
 [n8n](https://n8n.io) nodes for [Costfluent](https://costfluent.com), the cloud cost management
 platform:
@@ -12,12 +12,12 @@ The package has no runtime dependencies. It is MIT licensed.
 
 ## Install
 
-In n8n, open **Settings**, **Community Nodes**, select **Install** and enter `n8n-nodes-costfluent`.
+In n8n, open **Settings**, **Community Nodes**, select **Install** and enter `@costfluent/n8n-nodes-costfluent`.
 On a self-hosted instance you can instead install it into n8n's custom nodes folder:
 
 ```bash
 cd ~/.n8n/nodes
-npm install n8n-nodes-costfluent
+npm install @costfluent/n8n-nodes-costfluent
 ```
 
 Then restart n8n. See n8n's
