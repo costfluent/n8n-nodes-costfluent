@@ -611,6 +611,80 @@ describe('activation', () => {
 			expect(staticData).toEqual({});
 		});
 
+		// Starts the hook and reports, at each step of the fake clock, whether it has finished.
+		function start<T>(promise: Promise<T>) {
+			const state: { result?: PromiseSettledResult<T> } = {};
+			void Promise.allSettled([promise]).then(([result]) => {
+				state.result = result;
+			});
+			return state;
+		}
+
+		it('waits 1, 2 and 4 seconds before its three resends', async () => {
+			const { context, requests } = hookContext({
+				parameters: { events: ['spend_band'] },
+				responses: lost.slice(0, 4).map(([, failure]) => failure()),
+			});
+
+			const hook = start(methods.create.call(context));
+
+			await vi.advanceTimersByTimeAsync(999);
+			expect(requests).toHaveLength(1);
+			await vi.advanceTimersByTimeAsync(1);
+			expect(requests).toHaveLength(2);
+
+			await vi.advanceTimersByTimeAsync(1_999);
+			expect(requests).toHaveLength(2);
+			await vi.advanceTimersByTimeAsync(1);
+			expect(requests).toHaveLength(3);
+
+			await vi.advanceTimersByTimeAsync(3_999);
+			expect(requests).toHaveLength(3);
+			expect(hook.result).toBeUndefined();
+			await vi.advanceTimersByTimeAsync(1);
+			expect(requests).toHaveLength(4);
+
+			// The last lost answer is final: the hook gives up at once, with no fourth wait.
+			expect(hook.result?.status).toBe('rejected');
+			expect(vi.getTimerCount()).toBe(0);
+		});
+
+		it('stores the channel a resend creates only once its wait has passed', async () => {
+			const { context, requests, staticData } = hookContext({
+				parameters: { events: ['spend_band'] },
+				responses: [lost[0][1](), { ...created, signingSecret: SECRET }],
+			});
+
+			const hook = start(methods.create.call(context));
+
+			await vi.advanceTimersByTimeAsync(999);
+			expect(requests).toHaveLength(1);
+			expect(hook.result).toBeUndefined();
+			expect(staticData).toEqual({});
+
+			await vi.advanceTimersByTimeAsync(1);
+			expect(requests).toHaveLength(2);
+			expect(hook.result).toEqual({ status: 'fulfilled', value: true });
+			expect(staticData).toEqual({ appId: APP_ID, signingSecret: SECRET });
+		});
+
+		it('rejects a create the API refused without waiting', async () => {
+			const { context, requests } = hookContext({
+				parameters: { events: ['spend_band'] },
+				responses: [
+					Object.assign(new Error('Request failed with status code 409'), { httpCode: '409' }),
+					{ ...created, signingSecret: SECRET },
+				],
+			});
+
+			const hook = start(methods.create.call(context));
+
+			await vi.advanceTimersByTimeAsync(0);
+			expect(requests).toHaveLength(1);
+			expect(hook.result?.status).toBe('rejected');
+			expect(vi.getTimerCount()).toBe(0);
+		});
+
 		it.each([400, 409, 500])('does not resend a create the API refused with %s', async (status) => {
 			const { context, requests, staticData } = hookContext({
 				parameters: { events: ['spend_band'] },

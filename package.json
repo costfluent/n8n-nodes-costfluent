@@ -1,6 +1,6 @@
 {
-	"name": "n8n-nodes-costfluent",
-	"version": "0.1.0",
+	"name": "@costfluent/n8n-nodes-costfluent",
+	"version": "0.1.1",
 	"description": "n8n nodes for Costfluent: trigger workflows on cloud cost events and read costs, reports, budgets and anomalies",
 	"license": "MIT",
 	"homepage": "https://github.com/costfluent/n8n-nodes-costfluent#readme",
@@ -27,7 +27,8 @@
 		"dev": "n8n-node dev",
 		"lint": "n8n-node lint",
 		"lint:fix": "n8n-node lint --fix",
-		"test": "vitest run",
+		"test": "npm run typecheck && vitest run --coverage",
+		"typecheck": "tsc -p tsconfig.test.json",
 		"release": "n8n-node release",
 		"prepublishOnly": "n8n-node prerelease"
 	},
@@ -47,6 +48,7 @@
 	},
 	"devDependencies": {
 		"@n8n/node-cli": "0.52.6",
+		"@vitest/coverage-v8": "5.0.5",
 		"eslint": "9.39.4",
 		"prettier": "3.8.3",
 		"release-it": "20.2.0",

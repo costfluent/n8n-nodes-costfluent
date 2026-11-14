@@ -11,5 +11,13 @@ export default defineConfig({
 	test: {
 		include: ['test/**/*.test.ts'],
 		server: { deps: { external: [/node_modules\/n8n-workflow\//] } },
+		coverage: {
+			provider: 'v8',
+			// The .node.json files are n8n's codex metadata, not code.
+			include: ['nodes/**/*.ts', 'credentials/**/*.ts'],
+			reporter: ['text-summary'],
+			// The figures of 2026-11-13 (lines 98.23%, branches 94.81%), rounded down.
+			thresholds: { lines: 98, branches: 94 },
+		},
 	},
 });

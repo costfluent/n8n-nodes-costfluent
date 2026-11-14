@@ -20,7 +20,7 @@ export interface RecordedRequest {
 const node: INode = {
 	id: 'node-id',
 	name: 'Costfluent',
-	type: 'n8n-nodes-costfluent.costfluent',
+	type: '@costfluent/n8n-nodes-costfluent.costfluent',
 	typeVersion: 1,
 	position: [0, 0],
 	parameters: {},
