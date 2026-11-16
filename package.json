@@ -1,6 +1,6 @@
 {
 	"name": "@costfluent/n8n-nodes-costfluent",
-	"version": "0.1.1",
+	"version": "0.1.2",
 	"description": "n8n nodes for Costfluent: trigger workflows on cloud cost events and read costs, reports, budgets and anomalies",
 	"license": "MIT",
 	"homepage": "https://github.com/costfluent/n8n-nodes-costfluent#readme",

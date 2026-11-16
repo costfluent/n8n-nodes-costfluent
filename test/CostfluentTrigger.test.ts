@@ -442,6 +442,27 @@ describe('activation', () => {
 		expect(staticData).toEqual({ appId: APP_ID, signingSecret: SECRET });
 	});
 
+	it('bounds the create, check and delete requests at 60 seconds', async () => {
+		const { context, requests } = hookContext({
+			parameters: { events: ['spend_band'] },
+			responses: [
+				{ id: APP_ID, key: 'webhook', signingSecret: SECRET },
+				storedApp(['spend_band']),
+				fullResponse(204),
+			],
+		});
+
+		await expect(methods.create.call(context)).resolves.toBe(true);
+		await expect(methods.checkExists.call(context)).resolves.toBe(true);
+		await expect(methods.delete.call(context)).resolves.toBe(true);
+
+		expect(requests.map((r) => [r.options.method, r.options.timeout])).toEqual([
+			['POST', 60_000],
+			['GET', 60_000],
+			['DELETE', 60_000],
+		]);
+	});
+
 	it('replaces a stored app when the selected events changed', async () => {
 		const newApp = 'app_BBBBBBBBBBBBBBBBBBBBBB';
 		const { context, requests, staticData } = hookContext({

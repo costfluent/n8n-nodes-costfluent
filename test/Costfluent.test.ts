@@ -226,6 +226,7 @@ describe('each read operation', () => {
 					baseURL: 'https://api.costfluent.test',
 					url: op.path,
 					json: true,
+					timeout: 60_000,
 				});
 				expect(requests[0].options.qs).toEqual(op.qs);
 				expect(items).toEqual([{ json: body, pairedItem: { item: 0 } }]);
@@ -250,6 +251,7 @@ describe('each read operation', () => {
 						baseURL: 'https://api.costfluent.test',
 						url: op.path,
 						arrayFormat: 'repeat',
+						timeout: 60_000,
 					});
 				}
 				expect(requests[0].options.qs).toEqual({ ...op.qs, limit: pageSize });
