@@ -21,7 +21,8 @@ import { isValidSignature } from './signature';
 const SIGNATURE_HEADER = 'x-costfluent-signature';
 
 // The same on every attempt at one notification, so a workflow can drop a retried delivery. A
-// channel test sends none.
+// channel test sends none. The body's delivery_id carries the same key under the signature, so the
+// header counts only for a body from before Costfluent signed it.
 const DELIVERY_HEADER = 'x-costfluent-delivery';
 
 // The signature covers the body's timestamp, the time Costfluent sent this attempt. A delivery sent
@@ -322,14 +323,20 @@ export class CostfluentTrigger implements INodeType {
 			return respond(this, 200, 'Ignored');
 		}
 
-		const deliveryId = req.header(DELIVERY_HEADER);
 		return {
 			workflowData: [
 				this.helpers.returnJsonArray({
 					...body,
-					delivery_id: typeof deliveryId === 'string' && deliveryId !== '' ? deliveryId : null,
+					delivery_id: deliveryIdOf(body, req.header(DELIVERY_HEADER)),
 				}),
 			],
 		};
 	}
+}
+
+// The signed body's id wins, its null included, which is how a channel test says it has none: the
+// header is not signed, so it must not put an id on a body that carries its own.
+function deliveryIdOf(body: IDataObject, header: unknown): string | null {
+	const id = 'delivery_id' in body ? body.delivery_id : header;
+	return typeof id === 'string' && id !== '' ? id : null;
 }

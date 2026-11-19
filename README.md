@@ -95,8 +95,7 @@ workflow deletes the channel. A channel someone already deleted in Costfluent co
 
 ### What the workflow receives
 
-One item: the body Costfluent sent, and beside its fields `delivery_id`, the request's
-`X-Costfluent-Delivery` header:
+One item: the body Costfluent sent, as it was signed:
 
 ```json
 {
@@ -107,6 +106,8 @@ One item: the body Costfluent sent, and beside its fields `delivery_id`, the req
   "html_content": "<p>Rightsize the build agents was accepted.</p>",
   "timestamp": "2026-10-19T08:00:00.0000000Z",
   "app_id": "app_Xk2pQ9vLr4mN8tY1wZ3aBc",
+  "delivery_id": "delivery-0192a3b4c5d67e8f9a0b1c2d3e4f5a6b",
+  "occurred_at": "2026-10-19T07:59:58.1234560Z",
   "data": {
     "opportunity_id": "sav_Rk7mV2pQx9LnT4wY8cZ1aB",
     "workspace_id": "wsp_Hq3nB8xLm2vK9tR4yP7cWd",
@@ -116,17 +117,19 @@ One item: the body Costfluent sent, and beside its fields `delivery_id`, the req
     "estimated_monthly_saving": 120.5,
     "currency": "EUR",
     "changed_at": "2026-10-19T07:59:58Z"
-  },
-  "delivery_id": "delivery-0192a3b4c5d67e8f9a0b1c2d3e4f5a6b"
+  }
 }
 ```
 
 Costfluent retries a delivery that failed, so a workflow can start twice for one change.
 `delivery_id` is the same on every attempt at one delivery, so drop an item whose `delivery_id` the
-workflow already handled. It is `null` for a channel test, which sends none.
+workflow already handled. It is `null` for a channel test, which has none. A body from before
+Costfluent signed `delivery_id` takes it from the request's `X-Costfluent-Delivery` header.
+`occurred_at` is when the change happened, the same on every attempt, so order changes by it rather
+than by `timestamp`.
 
 Branch on `event_type`, and read ids and figures from `data` rather than from the text in
-`subject` and `content`, whose wording can change. `timestamp` is when the delivery was sent, in
+`subject` and `content`, whose wording can change. `timestamp` is when this attempt was sent, in
 UTC. Ids are the ones the Public API uses, instants are UTC, and the enumerated values below are
 spelled as shown:
 
