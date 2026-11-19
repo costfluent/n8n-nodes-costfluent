@@ -29,7 +29,7 @@ const delivery = {
 	},
 };
 
-// What the workflow receives for a delivery that came without an X-Costfluent-Delivery header.
+// What the workflow receives for a delivery whose body and headers carry no delivery id.
 const emitted = { ...delivery, delivery_id: null };
 
 function sign(body: Buffer | string, secret = SECRET): string {
@@ -85,7 +85,38 @@ describe('webhook', () => {
 		expect(response.status).toBeUndefined();
 	});
 
-	it('adds the X-Costfluent-Delivery header as delivery_id beside the body fields', async () => {
+	it('takes delivery_id from the signed body', async () => {
+		const deliveryId = 'delivery-0192a3b4c5d67e8f9a0b1c2d3e4f5a6b';
+		const body = Buffer.from(JSON.stringify({ ...delivery, delivery_id: deliveryId }));
+		const { result } = await receive({ rawBody: body, signature: sign(body) });
+
+		expect(result.workflowData).toEqual([[{ json: { ...delivery, delivery_id: deliveryId } }]]);
+	});
+
+	it('keeps the signed body\'s delivery_id over an X-Costfluent-Delivery header that differs', async () => {
+		const deliveryId = 'delivery-0192a3b4c5d67e8f9a0b1c2d3e4f5a6b';
+		const body = Buffer.from(JSON.stringify({ ...delivery, delivery_id: deliveryId }));
+		const { result } = await receive({
+			rawBody: body,
+			signature: sign(body),
+			deliveryId: 'delivery-ffffffffffffffffffffffffffffffff',
+		});
+
+		expect(result.workflowData).toEqual([[{ json: { ...delivery, delivery_id: deliveryId } }]]);
+	});
+
+	it('keeps the null delivery_id of a channel test over an X-Costfluent-Delivery header', async () => {
+		const body = Buffer.from(JSON.stringify({ ...delivery, delivery_id: null }));
+		const { result } = await receive({
+			rawBody: body,
+			signature: sign(body),
+			deliveryId: 'delivery-ffffffffffffffffffffffffffffffff',
+		});
+
+		expect(result.workflowData).toEqual([[{ json: emitted }]]);
+	});
+
+	it('takes delivery_id from the X-Costfluent-Delivery header for a body without one', async () => {
 		const deliveryId = 'delivery-0192a3b4c5d67e8f9a0b1c2d3e4f5a6b';
 		const { result } = await receive({ signature: sign(rawBody), deliveryId });
 
@@ -235,12 +266,14 @@ describe("the backend's golden delivery", () => {
 		return { result, response };
 	}
 
-	it('starts the workflow with its body and its X-Costfluent-Delivery header as delivery_id', async () => {
+	it('starts the workflow with its body, whose signed delivery_id is its X-Costfluent-Delivery header', async () => {
 		const { result, response } = await receive(rawBody);
 
-		expect(result.workflowData).toEqual([
-			[{ json: { ...JSON.parse(golden.body), delivery_id: golden.headers['X-Costfluent-Delivery'] } }],
-		]);
+		expect(JSON.parse(golden.body)).toMatchObject({
+			delivery_id: golden.headers['X-Costfluent-Delivery'],
+			occurred_at: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{7}Z$/),
+		});
+		expect(result.workflowData).toEqual([[{ json: JSON.parse(golden.body) }]]);
 		expect(response.status).toBeUndefined();
 	});
 
